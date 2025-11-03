@@ -1,0 +1,29 @@
+# Core libraries for Transformers
+transformers==4.41.2
+peft==0.10.0
+accelerate==0.29.3
+datasets==2.19.0
+bitsandbytes>=0.43.2
+trl==0.8.6
+
+# For data handling and configuration
+pandas
+pyyaml
+python-dotenv
+
+# For evaluation metrics
+evaluate
+rouge_score
+bert_score
+sacrebleu
+nltk
+
+# For Vietnamese tokenization
+pyvi
+
+# For interacting with Gemini API
+google-generativeai
+
+# For visualization in notebooks
+matplotlib
+seaborn
