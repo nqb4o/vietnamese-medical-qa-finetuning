@@ -145,11 +145,11 @@ def main(config_path: str):
     puncs_enc = {tokenizer.encode(p, add_special_tokens=False)[0] for p in puncs}
 
     # --- 4. Main Loop for Saliency Weight Calculation ---
-    nlft_training_data = []
+    tvaft_training_data = []
 
     print("Starting saliency weight calculation for each token...")
     try:
-        for i, sample in enumerate(tqdm(initial_samples_list, desc="Creating NLFT Data")):
+        for i, sample in enumerate(tqdm(initial_samples_list, desc="Creating TVAFT Data")):
             x_base_prompt = sample["prompt_for_masking"]
             y_standard = sample["completion"]
             y_standard_token_ids = tokenizer.encode(y_standard, add_special_tokens=False)
@@ -223,7 +223,7 @@ def main(config_path: str):
                 saliency_weights = smooth_scale_weights(weights_np.tolist(), **tvaft_cfg['scaling'])
 
             # Store the final processed data for this sample
-            nlft_training_data.append({
+            tvaft_training_data.append({
                 "text_for_training": x_base_prompt + y_standard,
                 "prompt_for_masking": x_base_prompt,
                 "saliency_weights": saliency_weights,
@@ -244,9 +244,9 @@ def main(config_path: str):
             os.makedirs(output_dir, exist_ok=True)
 
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(nlft_training_data, f, ensure_ascii=False, indent=4)
+            json.dump(tvaft_training_data, f, ensure_ascii=False, indent=4)
 
-        print(f"\n✅ Done! Saved {len(nlft_training_data)} samples to file: {output_path}")
+        print(f"\n✅ Done! Saved {len(tvaft_training_data)} samples to file: {output_path}")
 
 
 if __name__ == "__main__":
