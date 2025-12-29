@@ -1,5 +1,37 @@
 model:
   new_model_name: "phogpt-4b-medical-chatbot-sft" # Tên thư mục lưu model SFT
+  base_model_name: "vinai/PhoGPT-4B-Chat"
+  torch_dtype: "bfloat16"
+
+data:
+  dataset_name: "hungnm/vietnamese-medical-qa"
+  prompt_template: "### Câu hỏi: {instruction}\n### Trả lời:"
+  test_size: 0.1
+  seed: 42
+  max_samples: 3750
+  max_seq_length: 1024
+  text_field: "text"
+  paths:
+    raw_data: "data/raw/hungnm_vietnamese-medical-qa.json"
+    sft_train: "data/processed/sft_train.json"
+    sft_validation: "data/processed/sft_validation.json"
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: false
+
+peft:
+  r: 16
+  lora_alpha: 32
+  target_modules:
+    - "Wqkv"
+    - "out_proj"
+    - "up_proj"
+    - "down_proj"
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
 
 training:
   output_dir: "./results/sft_training" # Thư mục lưu checkpoint
