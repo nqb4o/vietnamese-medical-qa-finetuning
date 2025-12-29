@@ -5,6 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 from datasets import load_dataset
+from sympy.abc import epsilon
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from tqdm.auto import tqdm
 import json
@@ -54,7 +55,7 @@ def get_token_probabilities(model, tokenizer, context_prompt, target_token_ids, 
     return token_probs
 
 
-def smooth_scale_weights(weights, min_val, max_val, scale=1.0):
+def smooth_scale_weights(weights, min_val, max_val, scale_factor=1.0):
     """
     Applies a tanh function to smoothly scale weights into a defined range.
 
@@ -72,7 +73,7 @@ def smooth_scale_weights(weights, min_val, max_val, scale=1.0):
 
     weights_np = np.array(weights, dtype=np.float32)
 
-    return (mean_val + amplitude * np.tanh((weights_np - 1.0) / scale)).tolist()
+    return (mean_val + amplitude * np.tanh((weights_np - 1.0) / scale_factor)).tolist()
 
 
 def main(config_path: str):
@@ -89,10 +90,10 @@ def main(config_path: str):
     model_cfg = config['model']
     data_cfg = config['data']
     tvaft_cfg = config['tvaft_params']
-    EPSILON = tvaft_cfg['epsilon']
+    EPSILON = config['data']['epsilon']
 
     # --- 2. Load Model and Tokenizer ---
-    print(f"Loading model and tokenizer from '{model_cfg['name']}'...")
+    print(f"Loading model and tokenizer from '{model_cfg['base_model_name']}'...")
 
     # Determine compute dtype based on hardware support and config
     compute_dtype = getattr(torch, model_cfg['torch_dtype'])
@@ -101,12 +102,12 @@ def main(config_path: str):
         compute_dtype = torch.float16
 
     model = AutoModelForCausalLM.from_pretrained(
-        model_cfg['name'],
+        model_cfg['base_model_name'],
         torch_dtype=compute_dtype,
         device_map="auto",
         trust_remote_code=True
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_cfg['name'], trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_cfg['base_model_name'], trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
@@ -119,8 +120,8 @@ def main(config_path: str):
         dataset = load_dataset(data_cfg['dataset_name'], split="train")
         subset = dataset.select(range(data_cfg['max_samples']))
 
-        judgments_df = pd.read_csv(data_cfg['paths']['judgments'])
-        bert_labels_df = pd.read_csv(data_cfg['paths']['bert_labels'])
+        judgments_df = pd.read_csv(data_cfg['paths']['tvaft_02_judgements'])
+        bert_labels_df = pd.read_csv(data_cfg['paths']['tvaft_03_bert_labels'])
         bert_is_correct_labels = bert_labels_df['is_correct'].values.tolist()
 
         # Ensure data sources are consistent
@@ -166,8 +167,7 @@ def main(config_path: str):
                 probs_standard = get_token_probabilities(model, tokenizer, context_probe, y_standard_token_ids, EPSILON)
 
                 for t_idx, p_std_t in enumerate(probs_standard):
-                    ratio = (p_std_t - tvaft_cfg['p_correct_threshold']) / max(1.0 - tvaft_cfg['p_correct_threshold'],
-                                                                               EPSILON)
+                    ratio = (p_std_t - tvaft_cfg['p_correct_threshold']) / max(1.0 - tvaft_cfg['p_correct_threshold'],EPSILON)
                     bonus = 1.5 / (1.0 + np.exp(-5.0 * ratio))
                     penalty_factor = (p_std_t / max(tvaft_cfg['p_correct_threshold'], EPSILON)) ** 0.5
 
@@ -238,7 +238,7 @@ def main(config_path: str):
         torch.cuda.empty_cache()
         print("Cleaned up model and CUDA cache.")
 
-        output_path = data_cfg['paths']['output']
+        output_path = data_cfg['paths']['tvaft_final_dataset']
         output_dir = os.path.dirname(output_path)
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
@@ -246,7 +246,7 @@ def main(config_path: str):
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(tvaft_training_data, f, ensure_ascii=False, indent=4)
 
-        print(f"\n✅ Done! Saved {len(tvaft_training_data)} samples to file: {output_path}")
+        print(f"\n Done! Saved {len(tvaft_training_data)} samples to file: {output_path}")
 
 
 if __name__ == "__main__":
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default="config.yaml",
+        default="src/configs/tvaft_config.yaml",
         help="Path to the YAML configuration file."
     )
     args = parser.parse_args()
