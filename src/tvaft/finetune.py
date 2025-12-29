@@ -131,7 +131,7 @@ def main(config_path: str):
     os.makedirs(output_model_path, exist_ok=True)
     trainer.model.save_pretrained(output_model_path)
     trainer.tokenizer.save_pretrained(output_model_path)
-    print("✅ Done!")
+    print(" Done!")
 
 
 if __name__ == "__main__":
