@@ -34,7 +34,6 @@ def main(config_path: str):
 
     model_responses_df = pd.read_csv(data_config['paths']['tvaft_01_model_responses'])
     model_responses = model_responses_df['model_response'].values.tolist()
-
     assert len(standard_answers) == len(model_responses), "Data mismatch!"
 
     # Calculate similarity and assign labels
@@ -47,7 +46,6 @@ def main(config_path: str):
     # Calculate cosine similarity for each pair
     cosine_scores = util.pytorch_cos_sim(standard_embeddings, model_embeddings)
     is_correct_labels = [cosine_scores[i][i].item() >= SIMILARITY_THRESHOLD for i in range(len(model_responses))]
-
     # Save results
     output_path = data_config['paths']['tvaft_03_bert_labels']
     df = pd.DataFrame({
@@ -63,12 +61,12 @@ def main(config_path: str):
     print(f"Total samples: {total_count}")
     print(f"Number of 'Correct' (True) labels: {correct_count} ({correct_count / total_count:.2%})")
     print(f"Number of 'Incorrect' (False) labels: {total_count - correct_count}")
-    print(f"\n✅ Done! Saved results to: {output_path}")
+    print(f"\n Done! Saved results to: {output_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Step 3 of TVAFT Pipeline: Assign is_correct labels using Sentence-BERT.")
-    parser.add_argument("--config", type=str, default="src/configs/base_config.yaml",
+    parser.add_argument("--config", type=str, default="src/configs/tvaft_config.yaml",
                         help="Path to the YAML config file.")
     args = parser.parse_args()
     main(args.config)
