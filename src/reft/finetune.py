@@ -13,7 +13,7 @@ from trl import DPOConfig, DPOTrainer
 
 
 def main(config_path: str):
-    with open(config_path, 'r') as file:
+    with open(config_path, 'r', encoding='utf-8') as file:
         config = yaml.safe_load(file)
 
     model_config = config['model']
@@ -23,7 +23,7 @@ def main(config_path: str):
     quant_config = config['quantization']
 
     print("--- Loading and processing DPO dataset ---")
-    dataset = load_dataset("json", data_files=data_config['dpo_dataset_path'], split="train")
+    dataset = load_dataset("json", data_files=data_config['paths']['reft_dpo_dataset'], split="train")
     train_test_split = dataset.train_test_split(test_size=0.1, seed=data_config['seed'])
     train_data = train_test_split['train']
     eval_data = train_test_split['test']
@@ -32,7 +32,8 @@ def main(config_path: str):
     print("--- Configuring and loading model ---")
     compute_dtype = getattr(torch, model_config['torch_dtype'])
 
-    bnb_config = BitsAndBytesConfig(**quant_config)
+    bnb_config = BitsAndBytesConfig(**quant_config,
+                                    bnb_4bit_compute_dtype=compute_dtype)
 
     model = AutoModelForCausalLM.from_pretrained(
         model_config['base_model_name'],
@@ -69,11 +70,12 @@ def main(config_path: str):
     os.makedirs(output_path, exist_ok=True)
     trainer.model.save_pretrained(output_path)
     tokenizer.save_pretrained(output_path)
-    print("✅ Done!")
+    print("Done!")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True, help="Path to the YAML config file.")
+    parser.add_argument("--config", type=str, default="src/configs/reft_config.yaml",
+                        help="Path to the YAML config file.")
     args = parser.parse_args()
     main(args.config)
