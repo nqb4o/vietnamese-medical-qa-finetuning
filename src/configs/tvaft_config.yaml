@@ -8,13 +8,11 @@ data:
   prompt_template: "### Câu hỏi: {instruction}\n### Trả lời:"
   test_size: 0.1
   seed: 42
-  max_samples: 3750
+  max_samples: 4167
   max_seq_length: 1024
+  epsilon: 1.0e-9
   paths:
     raw_data: "data/raw/hungnm_vietnamese-medical-qa.json"
-    sft_train: "data/processed/sft_train.json"
-    sft_validation: "data/processed/sft_validation.json"
-    reft_dpo_dataset: "data/processed/dpo_dataset.jsonl"
     tvaft_intermediate_dir: "data/processed/tvaft_intermediate"
     tvaft_01_model_responses: "data/processed/tvaft_intermediate/01_model_responses.csv"
     tvaft_02_judgements: "data/processed/tvaft_intermediate/02_judgements.csv"
