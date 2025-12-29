@@ -12,15 +12,20 @@ import yaml
 
 def generate_response(model, tokenizer, prompt, max_new_tokens=512):
     model.eval()
-    input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
+    input_ids = tokenizer(prompt, return_tensors="pt")
+
+    inputs_on_device = input_ids["input_ids"].to(model.device)
+    attention_mask_on_device = input_ids["attention_mask"].to(model.device)
 
     with torch.no_grad():
         outputs = model.generate(
-            **input_ids,
+            inputs=inputs_on_device,
+            attention_mask=attention_mask_on_device,
             do_sample=True,
             temperature=0.7,
+            top_k=50,
             top_p=0.9,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=1024,
             eos_token_id=tokenizer.eos_token_id,
             pad_token_id=tokenizer.pad_token_id
         )
@@ -29,7 +34,7 @@ def generate_response(model, tokenizer, prompt, max_new_tokens=512):
 
     try:
         # Split the answer after the prompt tag
-        answer_part = full_response.split("### Answer:")[1].strip()
+        answer_part = full_response.split("### Trả lời:")[1].strip()
     except IndexError:
         answer_part = ""  # Handle cases with incorrect formatting
     return answer_part
@@ -39,7 +44,7 @@ def main(config_path: str):
     print("--- STARTING STEP 1: GENERATE RESPONSES FROM BASE MODEL ---")
 
     # 1. Load configuration file
-    with open(config_path, 'r') as file:
+    with open(config_path, 'r', encoding='utf-8') as file:
         config = yaml.safe_load(file)
 
     model_config = config['model']
@@ -90,12 +95,13 @@ def main(config_path: str):
     df = pd.DataFrame({'model_response': responses})
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
 
-    print(f"\n✅ Done! Saved {len(responses)} responses to file: {output_path}")
+    print(f"\n Done! Saved {len(responses)} responses to file: {output_path}")
 
 
 if __name__ == "__main__":
+    print(torch.cuda.is_available())
     parser = argparse.ArgumentParser(description="Step 1 of TVAFT Pipeline: Generate responses from the base model.")
-    parser.add_argument("--config", type=str, default="src/configs/tvaft_config.yaml",
+    parser.add_argument("--config", type=str, default="src/configs/base_config.yaml",
                         help="Path to the YAML config file.")
     args = parser.parse_args()
     main(args.config)
