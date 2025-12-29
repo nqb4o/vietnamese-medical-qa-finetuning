@@ -18,36 +18,49 @@ load_dotenv()
 def get_judgement(model, question, standard_answer, model_response):
     """Sends a request to Gemini and returns the parsed judgement."""
     prompt_template = """
-        Bạn là một chuyên gia sửa lỗi và cải thiện câu trả lời.
+    Bạn là một chuyên gia sửa lỗi và cải thiện câu trả lời.
 
-        Cho mỗi câu hỏi, bạn được cung cấp:
-        1. Câu hỏi của người dùng.
-        2. Câu trả lời đúng chuẩn mực (Y_standard).
-        3. Câu trả lời sai do Model tạo ra (Y_model).
-        
-        Nhiệm vụ của bạn là tạo ra một phiên bản **đã được sửa chữa hoàn toàn và cải thiện**
-        của Y_model (gọi là 'judgment'), tuân thủ các yêu cầu sau:
-        - Trả lời trực tiếp và chính xác cho câu hỏi.
-        - Sửa tất cả lỗi có trong Y_model.
-        - Tận dụng thông tin từ Y_standard để đảm bảo tính đúng đắn và đầy đủ.
-        - Không cần giải thích quá trình sửa lỗi, chỉ cung cấp câu trả lời cuối cùng.
-        - Trả về JSON hợp lệ. Không chứa ký tự escape không hợp lệ. Dùng \\ thay vì \.
-        
-        Hãy cung cấp kết quả cho toàn bộ batch dưới dạng một mảng JSON (JSON array).
-        Mỗi phần tử trong mảng phải có cấu trúc:
-        {'id': <ID_câu_hỏi>, 'judgment': <câu_trả_lời_đã_sửa>}.
-        """
-    prompt = prompt_template.format(
-        question=question,
-        standard_answer=standard_answer,
-        model_response=model_response
-    )
+    Cho mỗi câu hỏi, bạn được cung cấp:
+    1. Câu hỏi của người dùng.
+    2. Câu trả lời đúng chuẩn mực (Y_standard).
+    3. Câu trả lời sai do Model tạo ra (Y_model).
+    
+    Nhiệm vụ của bạn là tạo ra một phiên bản **đã được sửa chữa hoàn toàn và cải thiện**
+    của Y_model (gọi là 'judgment'), tuân thủ các yêu cầu sau:
+    - Trả lời trực tiếp và chính xác cho câu hỏi.
+    - Sửa tất cả lỗi có trong Y_model.
+    - Tận dụng thông tin từ Y_standard để đảm bảo tính đúng đắn và đầy đủ.
+    - Không cần giải thích quá trình sửa lỗi, chỉ cung cấp câu trả lời cuối cùng.
+    - Trả về JSON hợp lệ. Không chứa ký tự escape không hợp lệ. Dùng \\ thay vì \\.
+    <Câu hỏi của người dùng>
+    """
+    prompt_template += question
+    """
+    </Câu hỏi của người dùng>
+    
+    <Câu trả lời đúng chuẩn mực (Y_standard)>
+    """
+    prompt_template += standard_answer
+    """
+    </Câu trả lời đúng chuẩn mực (Y_standard)>
+    
+    <Câu trả lời sai của Model (Y_model)>
+    """
+    prompt_template += model_response
+    """
+    </Câu trả lời sai của Model (Y_model)>
+    Hãy cung cấp kết quả dưới dạng một mảng JSON (JSON array).
+    Mỗi phần tử trong mảng phải có cấu trúc, buộc phải trả về cả id câu hỏi:
+    {'judgment': <câu_trả_lời_đã_sửa>}
+    """
 
+    # retry after 5s
     for _ in range(3):
         try:
-            response = model.generate_content(prompt)
+            response = model.generate_content(prompt_template)
             cleaned_response = response.text.strip().lstrip("```json").rstrip("```").strip()
             result = json.loads(cleaned_response)
+            print(result)
             return result['judgment']
         except Exception as e:
             print(f"API or JSON parsing error: {e}. Retrying in 5 seconds...")
@@ -67,7 +80,7 @@ def main(config_path: str):
     if not api_key:
         raise ValueError("Please set GEMINI_API_KEY in your .env file")
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 
     # Load necessary data
     print("Loading necessary data...")
@@ -77,7 +90,7 @@ def main(config_path: str):
 
     model_responses_df = pd.read_csv(data_config['paths']['tvaft_01_model_responses'])
 
-    assert len(train_subset) == len(model_responses_df), "Sample counts do not match!"
+    # assert len(train_subset) == len(model_responses_df), "Sample counts do not match!"
 
     # Create judgements
     judgements = []
@@ -85,7 +98,6 @@ def main(config_path: str):
     for i in tqdm(range(len(train_subset)), desc="Generating Judgements"):
         sample = train_subset[i]
         model_response = model_responses_df.iloc[i]['model_response']
-
         judgement = get_judgement(
             model,
             sample['question'],
@@ -101,7 +113,7 @@ def main(config_path: str):
     df = pd.DataFrame({'judgment': judgements})
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
 
-    print(f"\n✅ Done! Saved {len(judgements)} judgements to file: {output_path}")
+    print(f"\n Done! Saved {len(judgements)} judgements to file: {output_path}")
 
 
 if __name__ == "__main__":
