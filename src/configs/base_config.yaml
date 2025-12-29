@@ -18,7 +18,7 @@ data:
     tvaft_01_model_responses: "data/processed/tvaft_intermediate/01_model_responses.csv"
     tvaft_02_judgements: "data/processed/tvaft_intermediate/02_judgements.csv"
     tvaft_03_bert_labels: "data/processed/tvaft_intermediate/03_bert_labels.csv"
-    tvaft_final_dataset: "data/processed/tvaft_finetune_dataset.json"
+    tvaft_final_dataset: "data/processed/tvaft_intermediate/tvaft_finetune_dataset.json"
 
 quantization:
   load_in_4bit: true
