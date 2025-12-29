@@ -21,7 +21,7 @@ def preprocess_function(examples, prompt_template):
 
 
 def main(config_path: str):
-    with open(config_path, 'r') as file:
+    with open(config_path, 'r', encoding='utf-8') as file:
         config = yaml.safe_load(file)
 
     model_config = config['model']
@@ -39,7 +39,8 @@ def main(config_path: str):
     })
 
     prompt_template = data_config['prompt_template']
-    train_dataset = dataset_splits['train'].map(
+    _train_dataset = dataset_splits['train'].select(range(data_config['max_samples'])) # extract desired number of samples
+    train_dataset = _train_dataset.map(
         lambda x: preprocess_function(x, prompt_template),
         remove_columns=list(dataset_splits['train'].features)
     )
@@ -98,11 +99,12 @@ def main(config_path: str):
     os.makedirs(output_model_path, exist_ok=True)
     trainer.model.save_pretrained(output_model_path)
     trainer.tokenizer.save_pretrained(output_model_path)
-    print("✅ Done!")
+    print("Done!")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True, help="Path to the YAML config file.")
+    parser.add_argument("--config", type=str, default="src/configs/sft_config.yaml",
+                        help="Path to the YAML config file.")
     args = parser.parse_args()
     main(args.config)
