@@ -1,4 +1,5 @@
-# Core libraries for Transformers
+# Core ML & Deep Learning
+torch
 transformers==4.41.2
 peft==0.10.0
 accelerate==0.29.3
@@ -6,24 +7,31 @@ datasets==2.19.0
 bitsandbytes>=0.43.2
 trl==0.8.6
 
-# For data handling and configuration
+# Numerical & Data Processing
+numpy
 pandas
 pyyaml
 python-dotenv
+tqdm
 
-# For evaluation metrics
+# Evaluation Metrics
 evaluate
 rouge_score
 bert_score
 sacrebleu
 nltk
 
-# For Vietnamese tokenization
+# Sentence Embeddings & Semantic Search
+sentence-transformers
+
+# Vietnamese Language Support
 pyvi
 
-# For interacting with Gemini API
+# Cloud & API Services
 google-generativeai
+openai
 
-# For visualization in notebooks
+# Web App & Visualization
+streamlit
 matplotlib
 seaborn
