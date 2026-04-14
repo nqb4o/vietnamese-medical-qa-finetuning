@@ -18,26 +18,75 @@ st.set_page_config(
 # --- Custom CSS for Styling ---
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f7f9;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    /* Main container styling */
+    .stApp {
+        background: inherit;
     }
-    .stChatMessage {
-        border-radius: 15px;
-        padding: 10px;
-        margin-bottom: 10px;
+    
+    /* Header styling */
+    .main-title {
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem;
+        margin-bottom: 0px;
     }
-    .stButton>button {
-        border-radius: 20px;
-        background-color: #007bff;
-        color: white;
-    }
-    .medical-disclaimer {
-        font-size: 0.8em;
+    
+    .sub-title {
         color: #6c757d;
-        border-top: 1px solid #dee2e6;
-        padding-top: 10px;
-        margin-top: 20px;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
     }
+
+    /* Chat message styling */
+    .stChatMessage {
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #1a1c23;
+    }
+    
+    .stButton>button {
+        width: 100%;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .medical-disclaimer {
+        font-size: 0.85rem;
+        color: #888;
+        background: rgba(128, 128, 128, 0.05);
+        border-left: 4px solid #ff4b4b;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 3rem;
+    }
+    
+    /* Hide top bar for cleaner look */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,8 +101,8 @@ with st.sidebar:
         st.rerun()
 
 # --- Main Interface ---
-st.title("🩺 Vietnamese Medical Chatbot")
-st.markdown("Cố vấn sức khỏe thông minh cho người Việt.")
+st.markdown('<h1 class="main-title">🩺 Vietnamese Medical Chatbot</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Cố vấn sức khỏe thông minh cho người Việt.</p>', unsafe_allow_html=True)
 
 # Initialize chat history
 if "messages" not in st.session_state:

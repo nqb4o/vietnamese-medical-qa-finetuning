@@ -35,7 +35,7 @@ The main objective is to improve the quality of language models in specialized a
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://your-repository-url.git
+    git clone https://github.com/nqb4o/vietnamese-medical-qa-finetuning.git
     cd vietnamese-medical-qa-finetuning
     ```
 
