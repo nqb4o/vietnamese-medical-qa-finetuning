@@ -1,37 +1,5 @@
-# Core ML & Deep Learning
-torch
-transformers==4.41.2
-peft==0.10.0
-accelerate==0.29.3
-datasets==2.19.0
-bitsandbytes>=0.43.2
-trl==0.8.6
-
-# Numerical & Data Processing
-numpy
-pandas
-pyyaml
-python-dotenv
-tqdm
-
-# Evaluation Metrics
-evaluate
-rouge_score
-bert_score
-sacrebleu
-nltk
-
-# Sentence Embeddings & Semantic Search
-sentence-transformers
-
-# Vietnamese Language Support
-pyvi
-
-# Cloud & API Services
-google-generativeai
-openai
-
-# Web App & Visualization
 streamlit
 matplotlib
 seaborn
+openai
+python-dotenv
