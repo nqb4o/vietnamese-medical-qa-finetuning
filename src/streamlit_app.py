@@ -116,9 +116,10 @@ st.markdown("""
         margin: 0.1rem 0 0 0;
     }
     /* Collapse the Streamlit element wrappers around the (fixed) header so they don't add stray vertical space */
-    div[data-testid="stElementContainer"]:has(> div > .app-header),
-    div[data-testid="stMarkdown"]:has(> .app-header) {
+    [data-testid="stElementContainer"]:has(.app-header),
+    [data-testid="stMarkdown"]:has(.app-header) {
         height: 0 !important;
+        min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
         overflow: visible !important;
@@ -169,13 +170,17 @@ st.markdown("""
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Clear button — pinned to the top-right of the viewport, above header & sticky tabs */
+    /* Clear button — pinned to the top-right of the viewport, above header & sticky tabs.
+       Note: must be rendered OUTSIDE st.tabs() because tab-panel ancestors carry a CSS transform
+       that would otherwise re-anchor `position: fixed` to the panel instead of the viewport. */
     .st-key-clear_btn {
         position: fixed !important;
-        top: 1.1rem;
-        right: 1.5rem;
+        top: 1.1rem !important;
+        right: 1.5rem !important;
         z-index: 1002 !important;
         width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
     }
@@ -192,13 +197,6 @@ st.markdown("""
     .st-key-clear_btn .stButton > button:hover {
         background: linear-gradient(135deg, #ee5253 0%, #c0392b 100%) !important;
         box-shadow: 0 10px 15px -3px rgba(238, 82, 83, 0.35) !important;
-    }
-    /* Collapse the empty Streamlit wrappers around the (fixed) clear button so they don't add vertical space */
-    div[data-testid="stElementContainer"]:has(> .st-key-clear_btn) {
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: visible !important;
     }
 
     .medical-disclaimer {
@@ -319,19 +317,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Clear button rendered OUTSIDE st.tabs so its `position: fixed` is anchored
+# to the viewport (Streamlit tab-panel ancestors have a CSS transform that
+# would otherwise re-anchor fixed children to the panel itself).
+if st.button("🧹 Clear", key="clear_btn"):
+    st.session_state.messages = []
+    st.rerun()
+
 chat_tab, pipeline_tab = st.tabs(["💬 Chatbot", "🧪 TVAFT Pipeline"])
 
 # =========================================================================
 # Tab 1: Chatbot
 # =========================================================================
 with chat_tab:
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    if st.button("🧹 Clear", key="clear_btn"):
-        st.session_state.messages = []
-        st.rerun()
-
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
