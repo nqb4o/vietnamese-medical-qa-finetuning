@@ -137,19 +137,23 @@ st.markdown("""
     }
 
     /* Clear button — right-aligned with a distinct color */
-    .st-key-clear_btn {
-        display: flex;
-        justify-content: flex-end;
+    .st-key-clear_btn,
+    .st-key-clear_btn .stButton {
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+        text-align: right !important;
     }
     .st-key-clear_btn .stButton > button {
-        width: auto;
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
-        color: #ffffff;
-        padding: 0.45rem 1.1rem;
+        width: auto !important;
+        margin-left: auto !important;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%) !important;
+        color: #ffffff !important;
+        padding: 0.45rem 1.1rem !important;
     }
     .st-key-clear_btn .stButton > button:hover {
-        background: linear-gradient(135deg, #ee5253 0%, #c0392b 100%);
-        box-shadow: 0 10px 15px -3px rgba(238, 82, 83, 0.35);
+        background: linear-gradient(135deg, #ee5253 0%, #c0392b 100%) !important;
+        box-shadow: 0 10px 15px -3px rgba(238, 82, 83, 0.35) !important;
     }
 
     .medical-disclaimer {
