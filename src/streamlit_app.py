@@ -336,61 +336,8 @@ with chat_tab:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-
-    if prompt := st.chat_input("Hỏi tôi về vấn đề sức khỏe của bạn..."):
-        if not OPENAI_API_KEY:
-            st.error("`OPENAI_API_KEY` is not set. Add it to your `.env` file and restart the app.")
-            st.stop()
-
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        client = OpenAI(api_key=OPENAI_API_KEY)
-
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-
-            typing_indicator_html = (
-                '<div class="typing-dots">'
-                '<span class="dot"></span><span class="dot"></span><span class="dot"></span>'
-                '<span class="label">Đang suy nghĩ…</span>'
-                '</div>'
-            )
-            message_placeholder.markdown(typing_indicator_html, unsafe_allow_html=True)
-
-            system_prompt = (
-                "Bạn là một trợ lý y tế thông minh dành cho người Việt Nam. "
-                "Hãy trả lời các câu hỏi y tế một cách chính xác, chuyên nghiệp và ân cần. "
-                "Sử dụng thuật ngữ y khoa chính xác khi cần thiết. "
-                "Luôn nhắc nhở người dùng rằng thông tin này chỉ mang tính tham khảo và nên đi khám bác sĩ."
-            )
-
-            try:
-                for response in client.chat.completions.create(
-                    model=OPENAI_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
-                    ],
-                    stream=True,
-                ):
-                    delta = response.choices[0].delta.content or ""
-                    if not delta:
-                        continue
-                    full_response += delta
-                    message_placeholder.markdown(
-                        full_response + '<span class="stream-caret">▌</span>',
-                        unsafe_allow_html=True,
-                    )
-
-                message_placeholder.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-            except Exception as e:
-                message_placeholder.empty()
-                st.error(f"Error: {e}")
+    # Container that new (streaming) messages will be written into from outside the tab
+    streaming_box = st.container()
 
 # =========================================================================
 # Tab 2: TVAFT Pipeline Visualization
@@ -847,6 +794,66 @@ with pipeline_tab:
         "Source: `src/configs/tvaft_config.yaml`. "
         "Reported results are reproduced in `notebooks/02_evaluation.ipynb`."
     )
+
+# Chat input at SCRIPT ROOT so Streamlit auto-pins it to the bottom of the viewport.
+# (When placed inside `with chat_tab:` it renders inline, just below the tab list — the
+# thin sliver visible in the broken-UI screenshot.) Streaming messages are written into
+# `streaming_box`, which lives inside chat_tab so the bubbles still render in that tab.
+if prompt := st.chat_input("Hỏi tôi về vấn đề sức khỏe của bạn..."):
+    if not OPENAI_API_KEY:
+        st.error("`OPENAI_API_KEY` is not set. Add it to your `.env` file and restart the app.")
+        st.stop()
+
+    with streaming_box:
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        client = OpenAI(api_key=OPENAI_API_KEY)
+
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+
+            typing_indicator_html = (
+                '<div class="typing-dots">'
+                '<span class="dot"></span><span class="dot"></span><span class="dot"></span>'
+                '<span class="label">Đang suy nghĩ…</span>'
+                '</div>'
+            )
+            message_placeholder.markdown(typing_indicator_html, unsafe_allow_html=True)
+
+            system_prompt = (
+                "Bạn là một trợ lý y tế thông minh dành cho người Việt Nam. "
+                "Hãy trả lời các câu hỏi y tế một cách chính xác, chuyên nghiệp và ân cần. "
+                "Sử dụng thuật ngữ y khoa chính xác khi cần thiết. "
+                "Luôn nhắc nhở người dùng rằng thông tin này chỉ mang tính tham khảo và nên đi khám bác sĩ."
+            )
+
+            try:
+                for response in client.chat.completions.create(
+                    model=OPENAI_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                    ],
+                    stream=True,
+                ):
+                    delta = response.choices[0].delta.content or ""
+                    if not delta:
+                        continue
+                    full_response += delta
+                    message_placeholder.markdown(
+                        full_response + '<span class="stream-caret">▌</span>',
+                        unsafe_allow_html=True,
+                    )
+
+                message_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+            except Exception as e:
+                message_placeholder.empty()
+                st.error(f"Error: {e}")
 
 # --- Persistent footer disclaimer (always visible, both tabs) ---
 st.markdown("""
