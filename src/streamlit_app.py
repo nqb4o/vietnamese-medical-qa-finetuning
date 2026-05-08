@@ -88,21 +88,44 @@ st.markdown("""
         color-scheme: light !important;
     }
 
-    /* Header styling */
+    /* Header styling — fixed at the top of the viewport */
+    .app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1001;
+        background: #ffffff;
+        padding: 0.7rem 2rem 0.5rem 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
     .main-title {
         font-family: 'Inter', sans-serif;
         font-weight: 800;
         background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        margin-bottom: 0px;
+        font-size: 2rem;
+        margin: 0;
+        line-height: 1.2;
     }
-
     .sub-title {
         color: #6c757d;
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
+        font-size: 0.95rem;
+        margin: 0.1rem 0 0 0;
+    }
+    /* Reserve top space so content isn't hidden behind the fixed header */
+    .stApp [data-testid="stMainBlockContainer"],
+    .stApp .main .block-container {
+        padding-top: 110px !important;
+    }
+    /* Stick the tab bar just below the header so it stays visible while chat scrolls */
+    .stTabs [data-baseweb="tab-list"] {
+        position: sticky;
+        top: 95px;
+        background: #ffffff;
+        z-index: 1000;
+        padding-top: 0.25rem;
     }
 
     /* Chat message styling */
@@ -157,13 +180,31 @@ st.markdown("""
     }
 
     .medical-disclaimer {
-        font-size: 0.85rem;
-        color: #888;
-        background: rgba(128, 128, 128, 0.05);
-        border-left: 4px solid #ff4b4b;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-top: 3rem;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        font-size: 0.8rem;
+        color: #555;
+        background: #ffffff;
+        border-top: 3px solid #ff4b4b;
+        padding: 0.6rem 1.5rem;
+        margin: 0;
+        text-align: center;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+    }
+    .medical-disclaimer strong {
+        color: #ff4b4b;
+    }
+    /* Reserve space at the bottom of the page so content isn't hidden behind the fixed footer */
+    .stApp {
+        padding-bottom: 90px;
+    }
+    /* Push the chat input up so it clears the fixed footer */
+    [data-testid="stBottomBlockContainer"],
+    [data-testid="stChatInput"] {
+        bottom: 80px !important;
     }
 
     /* Pipeline tab styling */
@@ -249,9 +290,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Main Header ---
-st.markdown('<h1 class="main-title">🩺 Vietnamese Medical Chatbot</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Cố vấn sức khỏe thông minh cho người Việt.</p>', unsafe_allow_html=True)
+# --- Main Header (fixed at top) ---
+st.markdown(
+    """
+    <div class="app-header">
+        <h1 class="main-title">🩺 Vietnamese Medical Chatbot</h1>
+        <p class="sub-title">Cố vấn sức khỏe thông minh cho người Việt.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 chat_tab, pipeline_tab = st.tabs(["💬 Chatbot", "🧪 TVAFT Pipeline"])
 
@@ -326,13 +374,6 @@ with chat_tab:
             except Exception as e:
                 message_placeholder.empty()
                 st.error(f"Error: {e}")
-
-    st.markdown("""
-    <div class="medical-disclaimer">
-        <strong>Tuyên bố miễn trừ trách nhiệm:</strong> Đây là một hệ thống thử nghiệm sử dụng trí tuệ nhân tạo.
-        Các câu trả lời chỉ mang tính chất tham khảo. Luôn tham khảo ý kiến bác sĩ chuyên môn cho các vấn đề sức khỏe nghiêm trọng.
-    </div>
-    """, unsafe_allow_html=True)
 
 # =========================================================================
 # Tab 2: TVAFT Pipeline Visualization
@@ -789,3 +830,11 @@ with pipeline_tab:
         "Source: `src/configs/tvaft_config.yaml`. "
         "Reported results are reproduced in `notebooks/02_evaluation.ipynb`."
     )
+
+# --- Persistent footer disclaimer (always visible, both tabs) ---
+st.markdown("""
+<div class="medical-disclaimer">
+    <strong>Tuyên bố miễn trừ trách nhiệm:</strong> Đây là một hệ thống thử nghiệm sử dụng trí tuệ nhân tạo.
+    Các câu trả lời chỉ mang tính chất tham khảo. Luôn tham khảo ý kiến bác sĩ chuyên môn cho các vấn đề sức khỏe nghiêm trọng.
+</div>
+""", unsafe_allow_html=True)
