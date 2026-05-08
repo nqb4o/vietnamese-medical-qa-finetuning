@@ -640,10 +640,10 @@ with pipeline_tab:
                 )
     render_arrow()
 
-    # ------- Step 5 + reported results from thesis -------
+    # ------- Step 5 + reported results -------
     render_stage_card(stages[4])
 
-    st.markdown("##### 📋 Reported Results — Thesis Table 5 (test set, 463 samples)")
+    st.markdown("##### 📋 Reported Results (test set, 463 samples)")
     results_df = pd.DataFrame(
         {
             "Method": ["SFT", "ReFT (DPO)", "TVAFT (proposed)"],
@@ -686,8 +686,8 @@ with pipeline_tab:
     delta_col2.metric("ROUGE-L (TVAFT vs SFT)", "0.49", "+16.7%")
     delta_col3.metric("BERTScore F1 (TVAFT vs SFT)", "0.86", "+6.2%")
     st.caption(
-        "Source: thesis Chapter 4, Table 5. Significance: TVAFT > SFT on all metrics "
-        "(*p* < 0.01); TVAFT > ReFT on BLEU-4 and ROUGE-L (*p* < 0.05). "
+        "Significance: TVAFT > SFT on all metrics (*p* < 0.01); "
+        "TVAFT > ReFT on BLEU-4 and ROUGE-L (*p* < 0.05). "
         "Test split = 463 held-out samples, greedy decoding (`temperature=0.0`)."
     )
 
@@ -739,7 +739,7 @@ with pipeline_tab:
     st.divider()
 
     # ------- Key hyperparameters -------
-    st.markdown("### Key TVAFT Hyperparameters (thesis notation)")
+    st.markdown("### Key TVAFT Hyperparameters")
     hp_col1, hp_col2 = st.columns(2)
     with hp_col1:
         st.markdown(
@@ -759,6 +759,6 @@ with pipeline_tab:
         )
 
     st.caption(
-        "Source: thesis Chapter 3 (Table 3.x) and `src/configs/tvaft_config.yaml`. "
-        "Reported results in `notebooks/02_evaluation.ipynb` reproduce thesis Table 5."
+        "Source: `src/configs/tvaft_config.yaml`. "
+        "Reported results are reproduced in `notebooks/02_evaluation.ipynb`."
     )
