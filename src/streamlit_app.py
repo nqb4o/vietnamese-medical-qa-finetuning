@@ -76,9 +76,16 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-    /* Main container styling */
+    /* Main container styling — force light mode */
     .stApp {
-        background: inherit;
+        background: #ffffff;
+        color: #262730;
+        color-scheme: light;
+    }
+    html, body {
+        background: #ffffff !important;
+        color: #262730 !important;
+        color-scheme: light !important;
     }
 
     /* Header styling */
