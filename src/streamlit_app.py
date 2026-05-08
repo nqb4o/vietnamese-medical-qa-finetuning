@@ -136,6 +136,22 @@ st.markdown("""
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
+    /* Clear button — right-aligned with a distinct color */
+    .st-key-clear_btn {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .st-key-clear_btn .stButton > button {
+        width: auto;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+        color: #ffffff;
+        padding: 0.45rem 1.1rem;
+    }
+    .st-key-clear_btn .stButton > button:hover {
+        background: linear-gradient(135deg, #ee5253 0%, #c0392b 100%);
+        box-shadow: 0 10px 15px -3px rgba(238, 82, 83, 0.35);
+    }
+
     .medical-disclaimer {
         font-size: 0.85rem;
         color: #888;
@@ -242,9 +258,9 @@ with chat_tab:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    _, clear_col = st.columns([5, 1])
+    _, clear_col = st.columns([8, 1])
     with clear_col:
-        if st.button("🧹 Clear"):
+        if st.button("🧹 Clear", key="clear_btn"):
             st.session_state.messages = []
             st.rerun()
 
