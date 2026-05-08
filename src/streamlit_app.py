@@ -76,11 +76,12 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-    /* Main container styling — force light mode */
+    /* Main container — force light mode + reserve space for fixed header & footer */
     .stApp {
         background: #ffffff;
         color: #262730;
         color-scheme: light;
+        padding-bottom: 70px;
     }
     html, body {
         background: #ffffff !important;
@@ -88,7 +89,7 @@ st.markdown("""
         color-scheme: light !important;
     }
 
-    /* Header styling — fixed at the top of the viewport */
+    /* Header — fixed at the top of the viewport */
     .app-header {
         position: fixed;
         top: 0;
@@ -114,18 +115,27 @@ st.markdown("""
         font-size: 0.95rem;
         margin: 0.1rem 0 0 0;
     }
-    /* Reserve top space so content isn't hidden behind the fixed header */
+    /* Collapse the Streamlit element wrappers around the (fixed) header so they don't add stray vertical space */
+    div[data-testid="stElementContainer"]:has(> div > .app-header),
+    div[data-testid="stMarkdown"]:has(> .app-header) {
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    /* Reserve top space exactly equal to the fixed header height (~80px) so content doesn't hide behind it */
     .stApp [data-testid="stMainBlockContainer"],
     .stApp .main .block-container {
-        padding-top: 110px !important;
+        padding-top: 90px !important;
     }
-    /* Stick the tab bar just below the header so it stays visible while chat scrolls */
+    /* Stick the tab bar flush against the bottom of the fixed header */
     .stTabs [data-baseweb="tab-list"] {
         position: sticky;
-        top: 95px;
+        top: 80px;
         background: #ffffff;
         z-index: 1000;
         padding-top: 0.25rem;
+        margin-top: -0.25rem;
     }
 
     /* Chat message styling */
@@ -197,14 +207,10 @@ st.markdown("""
     .medical-disclaimer strong {
         color: #ff4b4b;
     }
-    /* Reserve space at the bottom of the page so content isn't hidden behind the fixed footer */
-    .stApp {
-        padding-bottom: 90px;
-    }
-    /* Push the chat input up so it clears the fixed footer */
+    /* Push the chat input up just enough to clear the fixed disclaimer (~50px tall) */
     [data-testid="stBottomBlockContainer"],
     [data-testid="stChatInput"] {
-        bottom: 80px !important;
+        bottom: 55px !important;
     }
 
     /* Pipeline tab styling */
@@ -281,10 +287,10 @@ st.markdown("""
         to { visibility: hidden; }
     }
 
-    /* Hide top bar and sidebar for cleaner look */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Hide top bar, sidebar, and Streamlit chrome — use display:none so they don't reserve layout space */
+    #MainMenu {display: none !important;}
+    footer {display: none !important;}
+    header[data-testid="stHeader"] {display: none !important;}
     section[data-testid="stSidebar"] {display: none !important;}
     div[data-testid="collapsedControl"] {display: none !important;}
     </style>
