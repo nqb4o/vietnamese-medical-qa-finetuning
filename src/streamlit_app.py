@@ -222,6 +222,13 @@ st.markdown("""
     [data-testid="stChatInput"] {
         bottom: 55px !important;
     }
+    /* Hide the chat input when the TVAFT Pipeline tab (2nd tab) is active.
+       The chat input lives at script root so we can't conditionally render it from Python;
+       this :has() selector checks which tab is selected and toggles the input's visibility. */
+    body:has(.stTabs [role="tab"]:nth-of-type(2)[aria-selected="true"]) [data-testid="stBottomBlockContainer"],
+    body:has(.stTabs [role="tab"]:nth-of-type(2)[aria-selected="true"]) [data-testid="stBottom"] {
+        display: none !important;
+    }
 
     /* Pipeline tab styling */
     .pipeline-step {
