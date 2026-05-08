@@ -124,15 +124,15 @@ st.markdown("""
         padding: 0 !important;
         overflow: visible !important;
     }
-    /* Reserve top space exactly equal to the fixed header height (~80px) so content doesn't hide behind it */
+    /* Reserve top space below the fixed header so tabs/content sit comfortably (not crammed against it) */
     .stApp [data-testid="stMainBlockContainer"],
     .stApp .main .block-container {
-        padding-top: 90px !important;
+        padding-top: 130px !important;
     }
-    /* Stick the tab bar flush against the bottom of the fixed header */
+    /* Stick the tab bar a bit below the header bottom (~80px) so there's a small breathing gap */
     .stTabs [data-baseweb="tab-list"] {
         position: sticky;
-        top: 80px;
+        top: 95px;
         background: #ffffff;
         z-index: 1000;
         padding-top: 0.25rem;
