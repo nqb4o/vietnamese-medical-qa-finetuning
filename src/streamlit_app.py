@@ -27,7 +27,7 @@ ACCENT = "#0A8F82"
 COUNTERPOINT = "#D9622B"
 BASELINE = "#3B7DD8"
 NEUTRAL = "#8A9A97"
-METHOD_ORDER = ["SFT", "ReFT (DPO)", "TVAFT (proposed)"]
+METHOD_ORDER = ["SFT", "ReFT (DPO)", "TVAFT (đề xuất)"]
 METHOD_COLORS = [BASELINE, COUNTERPOINT, ACCENT]
 
 SYSTEM_PROMPT = (
@@ -46,66 +46,66 @@ SUGGESTED_QUESTIONS = [
 
 STAGES = [
     {
-        "phase": "Data Preparation",
-        "title": "Response Generation",
+        "phase": "Chuẩn bị dữ liệu",
+        "title": "Sinh câu trả lời",
         "script": "src/tvaft/01_generate_responses.py",
         "summary": (
-            "Run the base **`vinai/PhoGPT-4B-Chat`** (4-bit NF4, QLoRA) over the 4,167 "
-            "training samples to produce **Y_model** answers for every question."
+            "Chạy mô hình gốc **`vinai/PhoGPT-4B-Chat`** (4-bit NF4, QLoRA) trên 4,167 mẫu "
+            "huấn luyện để sinh câu trả lời **Y_model** cho từng câu hỏi."
         ),
-        "inputs": "`hungnm/vietnamese-medical-qa` (train split)",
+        "inputs": "`hungnm/vietnamese-medical-qa` (tập huấn luyện)",
         "outputs": "`data/processed/tvaft_intermediate/01_model_responses.csv`",
     },
     {
-        "phase": "Data Preparation",
-        "title": "Judgment Collection (Gemini)",
+        "phase": "Chuẩn bị dữ liệu",
+        "title": "Thu thập đánh giá (Gemini)",
         "script": "src/tvaft/02_get_judgements.py",
         "summary": (
-            "For each (question, Y_standard, Y_model) triple, ask **Gemini-2.5-Flash** "
-            "to produce a corrected answer **Y_judge**. Approx. cost ≈ \\$0.50 for "
-            "4,167 samples at ~800 input tokens each."
+            "Với mỗi bộ ba (câu hỏi, Y_standard, Y_model), yêu cầu **Gemini-2.5-Flash** "
+            "tạo câu trả lời đã hiệu chỉnh **Y_judge**. Chi phí ước tính ≈ \\$0.50 cho "
+            "4,167 mẫu, mỗi mẫu khoảng 800 token đầu vào."
         ),
-        "inputs": "Stage 1 CSV + dataset gold answers",
+        "inputs": "CSV của giai đoạn 1 + đáp án chuẩn của bộ dữ liệu",
         "outputs": "`data/processed/tvaft_intermediate/02_judgements.csv`",
     },
     {
-        "phase": "Labeling",
-        "title": "Correctness Labeling (Vietnamese SBERT)",
+        "phase": "Gán nhãn",
+        "title": "Gán nhãn đúng/sai (SBERT tiếng Việt)",
         "script": "src/tvaft/03_label_correctness.py",
         "summary": (
-            "Encode Y_standard and Y_model with `keepitreal/vietnamese-sbert`, compute "
-            "cosine similarity, and tag each sample as **correct / incorrect** using "
-            "the empirically calibrated threshold **τ_sim = 0.70**."
+            "Mã hóa Y_standard và Y_model bằng `keepitreal/vietnamese-sbert`, tính độ tương đồng "
+            "cosine rồi gán nhãn **đúng / sai** cho từng mẫu theo ngưỡng hiệu chỉnh thực nghiệm "
+            "**τ_sim = 0.70**."
         ),
-        "inputs": "Stage 1 responses + gold answers",
+        "inputs": "Câu trả lời của giai đoạn 1 + đáp án chuẩn",
         "outputs": "`data/processed/tvaft_intermediate/03_bert_labels.csv`",
     },
     {
-        "phase": "Saliency",
-        "title": "Saliency Computation",
+        "phase": "Độ nổi bật",
+        "title": "Tính độ nổi bật (saliency)",
         "script": "src/tvaft/04_calculate_token_values.py",
         "summary": (
-            "For each token of Y_standard, run **3 forward passes** of PhoGPT to "
-            "estimate `p_base`, `p_std`, `p_judge` under the **`<SEP>`** probe-context "
-            "separator. Two saliency formulas (correct- vs incorrect-sample paths) "
-            "produce raw weights, then mean-normalization and tanh smoothing scale "
-            "them into **[0.2, 2.5]**. ≈12,500 forward passes total (~5h on RTX 4060 Ti)."
+            "Với mỗi token của Y_standard, chạy **3 lượt truyền xuôi** của PhoGPT để ước lượng "
+            "`p_base`, `p_std`, `p_judge` với dấu phân tách ngữ cảnh thăm dò **`<SEP>`**. "
+            "Hai công thức saliency (cho mẫu đúng và mẫu sai) tạo ra trọng số thô, sau đó chuẩn hóa "
+            "theo trung bình và làm mượt bằng tanh để đưa về khoảng **[0.2, 2.5]**. "
+            "Tổng cộng ≈12,500 lượt truyền xuôi (khoảng 5 giờ trên RTX 4060 Ti)."
         ),
-        "inputs": "Stages 2 & 3 outputs",
+        "inputs": "Đầu ra của giai đoạn 2 và 3",
         "outputs": "`data/processed/tvaft_intermediate/tvaft_finetune_dataset.json`",
     },
     {
-        "phase": "Training",
-        "title": "TVAFT Fine-tuning",
+        "phase": "Huấn luyện",
+        "title": "Tinh chỉnh TVAFT",
         "script": "src/tvaft/finetune.py",
         "summary": (
-            "LoRA-adapt PhoGPT-4B-Chat (r=16, α=32, dropout=0.05; targets `Wqkv`, "
-            "`out_proj`, `up_proj`, `down_proj`) with a custom **TVAFTTrainer** whose "
-            "cross-entropy loss is weighted per-token by the Stage 4 saliency map. "
-            "1 epoch, BS 4 × GA 4, LR 5e-5, cosine schedule, paged AdamW 32-bit, "
-            "max_seq_length 1024."
+            "Áp dụng LoRA cho PhoGPT-4B-Chat (r=16, α=32, dropout=0.05; các mô-đun đích `Wqkv`, "
+            "`out_proj`, `up_proj`, `down_proj`) với **TVAFTTrainer** tùy chỉnh, trong đó hàm mất mát "
+            "cross-entropy được đánh trọng số theo từng token bằng bản đồ saliency của giai đoạn 4. "
+            "1 epoch, kích thước batch 4 × tích lũy gradient 4, tốc độ học 5e-5, lịch cosine, "
+            "paged AdamW 32-bit, max_seq_length 1024."
         ),
-        "inputs": "Stage 4 JSON dataset",
+        "inputs": "Bộ dữ liệu JSON của giai đoạn 4",
         "outputs": "`src/models/phogpt-4b-medical-chatbot-tvaft/`",
     },
 ]
@@ -120,24 +120,24 @@ digraph TVAFT {
     edge [color="#8A9A97", fontname="Be Vietnam Pro, sans-serif", fontsize=9, fontcolor="#5B6F6B",
           arrowsize=0.7];
 
-    ds   [label="Vietnamese\\nMedical QA\\n(HF dataset)", fillcolor="#FFFFFF", color="#8A9A97"];
-    s1   [label="Stage 1\\nGenerate Y_model\\n(PhoGPT-4B 4-bit)"];
-    s2   [label="Stage 2\\nJudgements Y_judge\\n(Gemini 2.5 Flash)"];
-    s3   [label="Stage 3\\nLabel correctness\\n(Sentence-BERT, τ=0.7)"];
-    s4   [label="Stage 4\\nToken saliency\\n(probing + tanh scaling)"];
-    s5   [label="Stage 5\\nTVAFT fine-tune\\n(LoRA + weighted CE)"];
+    ds   [label="Hỏi đáp y tế\\ntiếng Việt\\n(bộ dữ liệu HF)", fillcolor="#FFFFFF", color="#8A9A97"];
+    s1   [label="Giai đoạn 1\\nSinh Y_model\\n(PhoGPT-4B 4-bit)"];
+    s2   [label="Giai đoạn 2\\nĐánh giá Y_judge\\n(Gemini 2.5 Flash)"];
+    s3   [label="Giai đoạn 3\\nGán nhãn đúng/sai\\n(Sentence-BERT, τ=0.7)"];
+    s4   [label="Giai đoạn 4\\nĐộ nổi bật của token\\n(thăm dò + co giãn tanh)"];
+    s5   [label="Giai đoạn 5\\nTinh chỉnh TVAFT\\n(LoRA + CE có trọng số)"];
     out  [label="phogpt-4b-medical\\n-chatbot-tvaft", shape=folder, fillcolor="#0F766E",
           color="#0F766E", fontcolor="#FFFFFF"];
 
-    ds -> s1 [label="questions"];
+    ds -> s1 [label="câu hỏi"];
     ds -> s2 [label="Y_standard"];
     ds -> s3 [label="Y_standard"];
     ds -> s4 [label="Y_standard"];
     s1 -> s2 [label="Y_model"];
     s1 -> s3 [label="Y_model"];
     s2 -> s4 [label="Y_judge"];
-    s3 -> s4 [label="is_correct"];
-    s4 -> s5 [label="saliency_weights"];
+    s3 -> s4 [label="nhãn đúng/sai"];
+    s4 -> s5 [label="trọng số saliency"];
     s5 -> out;
 }
 """
@@ -637,9 +637,9 @@ def stage_header(index: int):
     label("stage-title", html.escape(stage["title"]))
     st.markdown(stage["summary"])
     st.caption(
-        f"**Script:** `{stage['script']}`  \n"
-        f"**Inputs:** {stage['inputs']}  \n"
-        f"**Outputs:** {stage['outputs']}"
+        f"**Tập lệnh:** `{stage['script']}`  \n"
+        f"**Đầu vào:** {stage['inputs']}  \n"
+        f"**Đầu ra:** {stage['outputs']}"
     )
 
 
@@ -647,13 +647,13 @@ def correctness_section(counts):
     n_correct, n_total = counts
     n_incorrect = n_total - n_correct
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total samples", f"{n_total:,}", height="stretch")
+    col1.metric("Tổng số mẫu", f"{n_total:,}", height="stretch")
     col2.metric(
-        "Correct (≥0.7 cosine)", f"{n_correct:,}", f"{n_correct / n_total:.1%} of samples",
+        "Đúng (cosine ≥ 0.7)", f"{n_correct:,}", f"{n_correct / n_total:.1%} số mẫu",
         delta_color="off", delta_arrow="off",
     )
     col3.metric(
-        "Incorrect", f"{n_incorrect:,}", f"{n_incorrect / n_total:.1%} of samples",
+        "Sai", f"{n_incorrect:,}", f"{n_incorrect / n_total:.1%} số mẫu",
         delta_color="off", delta_arrow="off",
     )
 
@@ -662,19 +662,19 @@ def saliency_charts(sal):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        label("chart-title", "Saliency-weight distribution (post-tanh)")
+        label("chart-title", "Phân bố trọng số saliency (sau tanh)")
         hist = (
             alt.Chart(sal["hist"])
             .mark_bar(color=ACCENT)
             .encode(
-                x=alt.X("start:Q", title="Saliency weight"),
+                x=alt.X("start:Q", title="Trọng số saliency"),
                 x2="end:Q",
-                y=alt.Y("count:Q", title="Token count", axis=alt.Axis(format="~s", tickCount=4)),
+                y=alt.Y("count:Q", title="Số token", axis=alt.Axis(format="~s", tickCount=4)),
                 y2=alt.datum(0),
                 tooltip=[
-                    alt.Tooltip("start:Q", title="from", format=".2f"),
-                    alt.Tooltip("end:Q", title="to", format=".2f"),
-                    alt.Tooltip("count:Q", title="tokens", format=","),
+                    alt.Tooltip("start:Q", title="từ", format=".2f"),
+                    alt.Tooltip("end:Q", title="đến", format=".2f"),
+                    alt.Tooltip("count:Q", title="số token", format=","),
                 ],
             )
             .properties(height=220)
@@ -682,12 +682,12 @@ def saliency_charts(sal):
         st.altair_chart(style_chart(hist), width="stretch")
 
     with col2:
-        label("chart-title", "Per-sample mean saliency, by correctness")
+        label("chart-title", "Saliency trung bình mỗi mẫu, theo đúng/sai")
         if sal["mean_correct"] and sal["mean_incorrect"]:
             mean_df = pd.concat(
                 [
-                    pd.DataFrame({"mean_weight": sal["mean_correct"], "label": "Correct"}),
-                    pd.DataFrame({"mean_weight": sal["mean_incorrect"], "label": "Incorrect"}),
+                    pd.DataFrame({"mean_weight": sal["mean_correct"], "label": "Đúng"}),
+                    pd.DataFrame({"mean_weight": sal["mean_incorrect"], "label": "Sai"}),
                 ]
             )
             density = (
@@ -700,20 +700,20 @@ def saliency_charts(sal):
                 )
                 .mark_area(opacity=0.45, line=True)
                 .encode(
-                    x=alt.X("mean_weight:Q", title="Per-sample mean saliency"),
-                    y=alt.Y("density:Q", title="Density", axis=alt.Axis(tickCount=4)),
+                    x=alt.X("mean_weight:Q", title="Saliency trung bình mỗi mẫu"),
+                    y=alt.Y("density:Q", title="Mật độ", axis=alt.Axis(tickCount=4)),
                     color=alt.Color(
                         "label:N",
-                        scale=alt.Scale(domain=["Correct", "Incorrect"], range=[ACCENT, COUNTERPOINT]),
+                        scale=alt.Scale(domain=["Đúng", "Sai"], range=[ACCENT, COUNTERPOINT]),
                     ),
-                    tooltip=["label:N", alt.Tooltip("mean_weight:Q", format=".2f")],
+                    tooltip=[alt.Tooltip("label:N", title="Nhãn"), alt.Tooltip("mean_weight:Q", title="Saliency trung bình", format=".2f")],
                 )
                 .properties(height=220)
             )
             st.altair_chart(style_chart(density), width="stretch")
 
     with col3:
-        label("chart-title", "Tanh smoothing curve (raw → scaled weight)")
+        label("chart-title", "Đường làm mượt tanh (thô → đã co giãn)")
         st.altair_chart(style_chart(tanh_curve()), width="stretch")
 
 
@@ -727,9 +727,9 @@ def tanh_curve():
         alt.Chart(pd.DataFrame({"raw": raw, "scaled": scaled}))
         .mark_line(color=ACCENT, strokeWidth=2)
         .encode(
-            x=alt.X("raw:Q", title="Raw weight (mean-normalized)"),
-            y=alt.Y("scaled:Q", title="Scaled weight", scale=alt.Scale(domain=[0, 3]), axis=alt.Axis(tickCount=4)),
-            tooltip=[alt.Tooltip("raw:Q", format=".2f"), alt.Tooltip("scaled:Q", format=".2f")],
+            x=alt.X("raw:Q", title="Trọng số thô (chuẩn hóa theo trung bình)"),
+            y=alt.Y("scaled:Q", title="Trọng số đã co giãn", scale=alt.Scale(domain=[0, 3]), axis=alt.Axis(tickCount=4)),
+            tooltip=[alt.Tooltip("raw:Q", title="Thô", format=".2f"), alt.Tooltip("scaled:Q", title="Đã co giãn", format=".2f")],
         )
     )
     bounds = (
@@ -741,9 +741,9 @@ def tanh_curve():
 
 
 def token_heatmap(examples):
-    label("chart-title", "Example: token-level saliency heatmap")
+    label("chart-title", "Ví dụ: bản đồ nhiệt saliency theo token")
     example_idx = st.slider(
-        "Pick a sample", min_value=1, max_value=len(examples), value=1, key="saliency_example"
+        "Chọn mẫu", min_value=1, max_value=len(examples), value=1, key="saliency_example"
     )
     sample = examples[example_idx - 1]
     weights_ex = sample.get("saliency_weights") or []
@@ -774,22 +774,22 @@ def token_heatmap(examples):
     st.markdown(
         f'<div class="token-map">{spans}</div>'
         f'<div class="token-legend">{w_min:.2f}<i></i>{w_max:.2f} '
-        "&nbsp;darker = more salient (token contributes more to the loss)</div>",
+        "&nbsp;màu càng đậm = càng nổi bật (token đóng góp nhiều hơn vào hàm mất mát)</div>",
         unsafe_allow_html=True,
     )
     st.caption(
-        f"Question: *{sample.get('question', '')[:140]}…*  •  "
-        f"is_correct=`{sample.get('is_correct')}`  •  "
-        "word-level average of token weights (approximate alignment)."
+        f"Câu hỏi: *{sample.get('question', '')[:140]}…*  •  "
+        f"Nhãn: `{'Đúng' if sample.get('is_correct') else 'Sai'}`  •  "
+        "trung bình trọng số token theo từng từ (căn chỉnh gần đúng)."
     )
 
 
 def results_section():
-    label("chart-title", "Reported results (test set, 463 samples)")
+    label("chart-title", "Kết quả công bố (tập kiểm thử, 463 mẫu)")
     metric_order = ["BLEU-4", "ROUGE-1", "ROUGE-L", "BERTScore F1"]
     results_df = pd.DataFrame(
         {
-            "Method": METHOD_ORDER,
+            "Phương pháp": METHOD_ORDER,
             "BLEU-4": [0.28, 0.31, 0.35],
             "ROUGE-1": [0.51, 0.54, 0.58],
             "ROUGE-L": [0.42, 0.45, 0.49],
@@ -797,23 +797,23 @@ def results_section():
         }
     )
     delta_col1, delta_col2, delta_col3 = st.columns(3)
-    delta_col1.metric("BLEU-4 (TVAFT vs SFT)", "0.35", "+25.0%")
-    delta_col2.metric("ROUGE-L (TVAFT vs SFT)", "0.49", "+16.7%")
-    delta_col3.metric("BERTScore F1 (TVAFT vs SFT)", "0.86", "+6.2%")
+    delta_col1.metric("BLEU-4 (TVAFT so với SFT)", "0.35", "+25.0%")
+    delta_col2.metric("ROUGE-L (TVAFT so với SFT)", "0.49", "+16.7%")
+    delta_col3.metric("BERTScore F1 (TVAFT so với SFT)", "0.86", "+6.2%")
 
-    metrics_long = results_df.melt(id_vars="Method", var_name="Metric", value_name="Score")
+    metrics_long = results_df.melt(id_vars="Phương pháp", var_name="Chỉ số", value_name="Điểm")
     metrics_chart = (
         alt.Chart(metrics_long)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
         .encode(
             x=alt.X(
-                "Metric:N", title=None, sort=metric_order,
+                "Chỉ số:N", title=None, sort=metric_order,
                 axis=alt.Axis(labelAngle=0), scale=alt.Scale(paddingInner=0.3),
             ),
-            xOffset=alt.XOffset("Method:N", sort=METHOD_ORDER, scale=alt.Scale(paddingInner=0.08)),
-            y=alt.Y("Score:Q", title="Score", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(tickCount=5)),
-            color=alt.Color("Method:N", scale=alt.Scale(domain=METHOD_ORDER, range=METHOD_COLORS)),
-            tooltip=["Method", "Metric", alt.Tooltip("Score:Q", format=".2f")],
+            xOffset=alt.XOffset("Phương pháp:N", sort=METHOD_ORDER, scale=alt.Scale(paddingInner=0.08)),
+            y=alt.Y("Điểm:Q", title="Điểm", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(tickCount=5)),
+            color=alt.Color("Phương pháp:N", scale=alt.Scale(domain=METHOD_ORDER, range=METHOD_COLORS)),
+            tooltip=["Phương pháp", "Chỉ số", alt.Tooltip("Điểm:Q", format=".2f")],
         )
         .properties(height=260)
     )
@@ -828,26 +828,26 @@ def results_section():
         width="stretch",
     )
     st.caption(
-        "Significance: TVAFT > SFT on all metrics (*p* < 0.01); "
-        "TVAFT > ReFT on BLEU-4 and ROUGE-L (*p* < 0.05). "
-        "Test split = 463 held-out samples, greedy decoding (`temperature=0.0`)."
+        "Mức ý nghĩa: TVAFT > SFT trên mọi chỉ số (*p* < 0.01); "
+        "TVAFT > ReFT trên BLEU-4 và ROUGE-L (*p* < 0.05). "
+        "Tập kiểm thử gồm 463 mẫu tách riêng, giải mã tham lam (`temperature=0.0`)."
     )
 
 
 def comparison_section():
-    label("section-title", "Comparison with Baselines")
+    label("section-title", "So sánh với các phương pháp cơ sở")
     comparison_df = pd.DataFrame(
         {
-            "Method": ["SFT", "ReFT (DPO)", "TVAFT"],
-            "Loss type": [
-                "Uniform CE on Y_standard",
-                "Pairwise preference (chosen/rejected)",
-                "Token-weighted CE w/ saliency",
+            "Phương pháp": ["SFT", "ReFT (DPO)", "TVAFT"],
+            "Loại hàm mất mát": [
+                "CE đồng nhất trên Y_standard",
+                "Ưu tiên theo cặp (chọn/loại)",
+                "CE có trọng số token theo saliency",
             ],
-            "Needs judge model": ["No", "Yes (Gemini for pairs)", "Yes (Gemini + S-BERT)"],
-            "Per-token signal": ["No", "No", "Yes"],
-            "Pipeline steps": [1, 2, 5],
-            "Config": [
+            "Cần mô hình đánh giá": ["Không", "Có (Gemini tạo cặp)", "Có (Gemini + S-BERT)"],
+            "Tín hiệu theo token": ["Không", "Không", "Có"],
+            "Số bước": [1, 2, 5],
+            "Cấu hình": [
                 "src/configs/sft_config.yaml",
                 "src/configs/reft_config.yaml",
                 "src/configs/tvaft_config.yaml",
@@ -858,27 +858,27 @@ def comparison_section():
 
 
 def hyperparameters_section():
-    label("section-title", "Key TVAFT Hyperparameters")
+    label("section-title", "Các siêu tham số chính của TVAFT")
     col1, col2 = st.columns(2)
     with col1.container(border=True, height="stretch"):
         st.markdown(
-            "- **τ_sim** = `0.70` — Sentence-BERT cosine threshold for correctness\n"
-            "- **τ_correct** = `0.95` — bonus cutoff for confident correct tokens\n"
-            "- **τ_incorrect** = `0.01` — minimum *p*(judge) for boosting incorrect samples\n"
-            "- **τ_r** = `1.2` — sigmoid pivot for ratio-based saliency\n"
-            "- **ε** = `1e-9` — numerical-stability constant"
+            "- **τ_sim** = `0.70` — ngưỡng cosine Sentence-BERT để xác định đúng/sai\n"
+            "- **τ_correct** = `0.95` — ngưỡng thưởng cho token đúng có độ tin cậy cao\n"
+            "- **τ_incorrect** = `0.01` — *p*(judge) tối thiểu để tăng trọng số cho mẫu sai\n"
+            "- **τ_r** = `1.2` — điểm xoay sigmoid của saliency theo tỷ lệ\n"
+            "- **ε** = `1e-9` — hằng số ổn định số học"
         )
     with col2.container(border=True, height="stretch"):
         st.markdown(
-            "- **Bonus**: `1.5 / (1 + e^(-5·ratio))` (multiplier 1.5, steepness 5)\n"
-            "- **Penalty**: `(p_std / τ_correct)^0.5` (default fallback `0.5`)\n"
-            "- **Final scaling**: tanh smooth into `[0.2, 2.5]`, σ = 1.0\n"
+            "- **Thưởng**: `1.5 / (1 + e^(-5·ratio))` (hệ số nhân 1.5, độ dốc 5)\n"
+            "- **Phạt**: `(p_std / τ_correct)^0.5` (giá trị mặc định `0.5`)\n"
+            "- **Co giãn cuối**: làm mượt tanh về `[0.2, 2.5]`, σ = 1.0\n"
             "- **LoRA**: `r=16`, `α=32`, dropout `0.05` — `Wqkv, out_proj, up_proj, down_proj`\n"
-            "- **Training**: 1 epoch, BS 4 × GA 4, LR `5e-5`, cosine, paged AdamW 32-bit, max_seq 1024"
+            "- **Huấn luyện**: 1 epoch, batch 4 × tích lũy gradient 4, tốc độ học `5e-5`, lịch cosine, paged AdamW 32-bit, max_seq 1024"
         )
     st.caption(
-        "Source: `src/configs/tvaft_config.yaml`. "
-        "Reported results are reproduced in `notebooks/02_evaluation.ipynb`."
+        "Nguồn: `src/configs/tvaft_config.yaml`. "
+        "Notebook đánh giá: `notebooks/02_evaluation.ipynb`."
     )
 
 
@@ -886,29 +886,29 @@ def render_pipeline():
     st.markdown(
         """
         <div class="page-intro">
-            <h2>Token Value-Aware Fine-Tuning (TVAFT)</h2>
-            <p>End-to-end pipeline that turns a Vietnamese medical QA dataset into a
-            saliency-weighted training set, then fine-tunes <strong>PhoGPT-4B-Chat</strong>
-            with token-level importance signals.</p>
+            <h2>Quy trình tinh chỉnh theo giá trị token (TVAFT)</h2>
+            <p>Token Value-Aware Fine-Tuning: quy trình hoàn chỉnh biến bộ dữ liệu hỏi đáp y tế tiếng Việt
+            thành tập huấn luyện có trọng số độ nổi bật (saliency), rồi tinh chỉnh <strong>PhoGPT-4B-Chat</strong>
+            bằng tín hiệu mức độ quan trọng của từng token.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Pipeline stages", "5")
-    col2.metric("Base model", "PhoGPT-4B-Chat", help="vinai/PhoGPT-4B-Chat, 4-bit NF4 (QLoRA)")
-    col3.metric("Train / Test", "4,167 / 463", help="hungnm/vietnamese-medical-qa, 10% test split")
-    col4.metric("Method", "TVAFT + LoRA")
+    col1.metric("Số giai đoạn", "5")
+    col2.metric("Mô hình gốc", "PhoGPT-4B-Chat", help="vinai/PhoGPT-4B-Chat, 4-bit NF4 (QLoRA)")
+    col3.metric("Huấn luyện / Kiểm thử", "4,167 / 463", help="hungnm/vietnamese-medical-qa, tách 10% làm tập kiểm thử")
+    col4.metric("Phương pháp", "TVAFT + LoRA")
 
-    label("section-title", "Pipeline Flow")
+    label("section-title", "Sơ đồ quy trình")
     st.graphviz_chart(FLOW_DOT, width="stretch")
 
     with st.spinner("Đang tải dữ liệu pipeline…"):
         counts = correctness_counts(str(BERT_LABELS_PATH))
         sal = load_saliency(str(TVAFT_DATASET_PATH))
 
-    label("section-title", "Stages")
+    label("section-title", "Các giai đoạn")
     with st.container(key="timeline"):
         with st.container(key="stage_0"):
             stage_header(0)
@@ -919,20 +919,20 @@ def render_pipeline():
             if counts:
                 correctness_section(counts)
             else:
-                st.info("Run stage 3 to populate `03_bert_labels.csv` and see the correctness summary here.")
+                st.info("Hãy chạy giai đoạn 3 để tạo `03_bert_labels.csv` và xem thống kê đúng/sai tại đây.")
         with st.container(key="stage_3"):
             stage_header(3)
             if sal and sal["n_tokens"]:
                 col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Tokens scored", f"{sal['n_tokens']:,}", help="Across the first 1,500 samples.")
-                col2.metric("Mean weight", f"{sal['mean']:.2f}")
-                col3.metric("Median", f"{sal['median']:.2f}")
-                col4.metric("Range", f"{sal['min']:.2f} – {sal['max']:.2f}")
+                col1.metric("Số token đã tính", f"{sal['n_tokens']:,}", help="Tính trên 1,500 mẫu đầu tiên.")
+                col2.metric("Trọng số trung bình", f"{sal['mean']:.2f}")
+                col3.metric("Trung vị", f"{sal['median']:.2f}")
+                col4.metric("Khoảng giá trị", f"{sal['min']:.2f} – {sal['max']:.2f}")
                 saliency_charts(sal)
                 if sal["examples"]:
                     token_heatmap(sal["examples"])
             else:
-                st.info("Run stage 4 to populate `tvaft_finetune_dataset.json` and see saliency charts here.")
+                st.info("Hãy chạy giai đoạn 4 để tạo `tvaft_finetune_dataset.json` và xem biểu đồ saliency tại đây.")
         with st.container(key="stage_4"):
             stage_header(4)
             results_section()
@@ -945,7 +945,7 @@ def render_pipeline():
 # Page
 # =========================================================================
 st.set_page_config(
-    page_title="Vietnamese Medical Chatbot",
+    page_title="Chatbot Y tế Tiếng Việt",
     page_icon="🩺",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -961,7 +961,7 @@ st.markdown(
     <div class="app-header">
         <div class="brand-mark">{BRAND_ICON}</div>
         <div>
-            <div class="brand-name">Vietnamese Medical Chatbot</div>
+            <div class="brand-name">Chatbot Y tế Tiếng Việt</div>
             <div class="brand-tagline">Cố vấn sức khỏe thông minh cho người Việt</div>
         </div>
     </div>
@@ -974,7 +974,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-VIEWS = {"chat": ":material/chat: Chatbot", "pipeline": ":material/account_tree: TVAFT Pipeline"}
+VIEWS = {"chat": ":material/chat: Chatbot", "pipeline": ":material/account_tree: Quy trình TVAFT"}
 with st.container(key="nav"):
     view = st.segmented_control(
         "Điều hướng",
